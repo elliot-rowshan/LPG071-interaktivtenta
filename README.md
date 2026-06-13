@@ -1,2 +1,1 @@
-# LPG071-interaktivtenta
-# LPG071-interaktivtenta
+https://elliot-rowshan.github.io/LPG071-interaktivtenta/
