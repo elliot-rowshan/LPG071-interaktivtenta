@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta name="author" content="Elliot Rowshan">
+<meta name="description" content="Elliot Rowshan, interaktiv tentafrågor, läkarstudent, Göteborg, Motgången 358.">
+<meta name="google-site-verification" content="OTQMMC61XwrYA76WYPTFFFavlT8swTWx_4wGPlDu9qI" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LPG071 – Interaktiv Tenta</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+    background: #f0f2f5;
+    color: #1a1a2e;
+    line-height: 1.6;
+  }
+
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: #1a1a2e; color: white;
+    padding: 12px 24px;
+    display: flex; align-items: center; gap: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  }
+  header h1 { font-size: 1rem; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+  #score-display { font-size: 0.95rem; font-weight: 700; color: #7ee8a2; white-space: nowrap; flex-shrink: 0; }
+  #progress-bar-wrap {
+    flex: 1; background: rgba(255,255,255,0.15);
+    border-radius: 8px; height: 8px; min-width: 60px;
+  }
+  #progress-bar {
+    height: 8px; background: linear-gradient(90deg, #7ee8a2, #2ed573);
+    border-radius: 8px; width: 0%;
+    transition: width 0.4s ease;
+  }
+  #answered-display { font-size: 0.8rem; color: rgba(255,255,255,0.6); white-space: nowrap; flex-shrink: 0; }
+
+  main { max-width: 820px; margin: 28px auto; padding: 0 16px 140px; }
+
+  .section-label {
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: #888;
+    margin: 32px 0 10px 4px;
+  }
+
+  .question-card {
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    padding: 22px 24px;
+    margin-bottom: 16px;
+    border-left: 4px solid transparent;
+    transition: border-color 0.3s;
+  }
+  .question-card.answered-correct { border-left-color: #28a745; }
+  .question-card.answered-wrong   { border-left-color: #dc3545; }
+
+  .q-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+  .q-num {
+    background: #1a1a2e; color: white;
+    border-radius: 50%; width: 34px; height: 34px; min-width: 34px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.88rem; flex-shrink: 0;
+  }
+  .q-text { font-size: 0.95rem; color: #1a1a2e; }
+
+  .options { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .opt-btn {
+    background: #f8f9fa; border: 2px solid #e0e0e0;
+    border-radius: 10px; padding: 10px 16px;
+    text-align: left; cursor: pointer; font-size: 0.9rem;
+    line-height: 1.5; color: #1a1a2e;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    position: relative;
+  }
+  .opt-btn:hover:not(.locked) {
+    background: #eef2ff; border-color: #7c83fd;
+    transform: translateX(3px);
+  }
+  .opt-btn.correct {
+    background: #d4edda; border-color: #28a745;
+    color: #155724; font-weight: 600;
+  }
+  .opt-btn.correct::after { content: ' ✓'; }
+  .opt-btn.wrong {
+    background: #f8d7da; border-color: #dc3545;
+    color: #721c24; text-decoration: line-through;
+  }
+  .opt-btn.wrong::after { content: ' ✗'; }
+  .opt-btn.locked { cursor: default; }
+
+  #finish-btn {
+    display: none;
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    color: white; border: none; border-radius: 30px;
+    padding: 15px 48px; font-size: 1.05rem; font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+    transition: transform 0.2s, box-shadow 0.2s; z-index: 200;
+  }
+  #finish-btn:hover { transform: translateX(-50%) scale(1.04); box-shadow: 0 10px 32px rgba(0,0,0,0.4); }
+
+  #results {
+    display: none;
+    background: white; border-radius: 14px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    padding: 36px; margin-top: 16px; text-align: center;
+  }
+  #results h2 { font-size: 1.5rem; margin-bottom: 8px; color: #1a1a2e; }
+  #final-score { font-size: 3.8rem; font-weight: 800; color: #28a745; margin: 16px 0 4px; }
+  #percent-text { color: #555; font-size: 1.1rem; margin-bottom: 6px; }
+  #grade-text { font-size: 0.95rem; color: #888; margin-bottom: 28px; }
+
+  #wrong-list { text-align: left; margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; }
+  #wrong-list h3 { font-size: 1rem; color: #dc3545; margin-bottom: 12px; font-weight: 700; }
+  .wrong-item {
+    background: #fff5f5; border-left: 4px solid #dc3545;
+    padding: 10px 14px; margin-bottom: 8px;
+    border-radius: 0 8px 8px 0; font-size: 0.88rem; color: #333;
+  }
+  .wrong-item strong { color: #1a1a2e; }
+  .wrong-item .right-ans { color: #155724; font-weight: 600; }
+
+  @media(max-width:600px){
+    header { padding: 10px 14px; gap: 10px; }
+    header h1 { font-size: 0.85rem; }
+    main { margin: 16px auto; }
+    .question-card { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Elliot Rowshan -LPG071 – Kirurgi &amp; Anestesi</h1>
+  <span id="score-display">0 / 76</span>
+  <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+  <span id="answered-display">0 besvarade</span>
+</header>
+
+<main>
+  <div id="questions-container"></div>
+  <div id="results">
+    <h2>🎉 Tenta avslutad!</h2>
+    <div id="final-score"></div>
+    <p id="percent-text"></p>
+    <p id="grade-text"></p>
+    <div id="wrong-list"></div>
+  </div>
+</main>
+
+<button id="finish-btn" onclick="showResults()">Visa resultat →</button>
+
+<script>
+const questions = [
+  // ── GI-KIRURGI ──────────────────────────────────────────────────────────────
+  {
+    num: 1,
+    text: "Ola, 62 år, söker med riklig hematoschezi sedan två dagar. Hb 70. Han är blek och rädd. Vad är den bästa initiala handläggningen?",
+    options: [
+      "Gör DT-angiografi för att lokalisera blödningskällan och låt honom gå hem om blödningen avstannat.",
+      "Rektoskopera och lägg in för blodtransfusion på avdelning – de flesta blödningar stannar spontant.",
+      "Lägg in med cyklokapron och beställ akut koloskopi då hela kolon måste kartläggas.",
+      "Rektoskopera och uteslut blödningskälla, ge lugnande besked.",
+      "Lägg in för blodtransfusion och beställ gastroskopi för att utesluta övre GI-blödning."
+    ],
+    correct: 2
+  },
+  {
+    num: 2,
+    text: "Adenocarcinom i magsäcken opereras beroende på lokalisation. Vilket påstående stämmer bäst?",
+    options: [
+      "Om cancern sitter nära gastroesofageala övergången görs en total gastrektomi.",
+      "Om cancern sitter nära gastroesofageala övergången görs en Merendinos operation.",
+      "Om cancern sitter nära gastroesofageala övergången görs en gastric bypass.",
+      "Om cancern sitter i fundus ventriculi görs en distal gastrektomi.",
+      "Om cancern sitter i antrum ventriculi görs en total gastrektomi."
+    ],
+    correct: 1
+  },
+  {
+    num: 3,
+    text: "Lisa, 25 år, vårdas för akut skov av ulcerös kolit. Rescue-behandling med Infliximab insatt. Fyra dagar senare: 10 blodiga diarréer/dygn, feber, takykardi, buksmärta. Kirurgen konsulteras. Vad är frågeställningen?",
+    options: [
+      "Tacksam för information avseende elektiv kolektomi inom några månader.",
+      "Ställningstagande till akut operation med avlastande ileostomi.",
+      "Ställningstagande till akut proktokolektomi.",
+      "Ställningstagande till akut kolektomi.",
+      "Ställningstagande till proktokolektomi och anläggning av bäckenreservoar."
+    ],
+    correct: 4
+  },
+  {
+    num: 4,
+    text: "Minnesramsan \"I GET SMASHED\" för ovanliga orsaker till akut pankreatit – vilket alternativ återger innehållet korrekt?",
+    options: [
+      "Idiopatisk, Gallsten, Etanol, Tandinfektion, Steroider, Malignitet, Autoimmun, Spindel, Hypertoni, ERCP, Droger",
+      "Idiopatisk, Gallsten, Etanol, Trauma, Steroider, Mässling, Autoimmun, Simning, Hyperlipidemi, ERCP, Droger",
+      "Idiopatisk, Gallsten, Etanol, Trauma, Steroider, Malignitet, Autoimmun, Skorpionstick, Hyperlipidemi, ERCP, Droger",
+      "Idiopatisk, Gallsten, Etanol, Tandinfektion, Steroider, Mässling, Autoimmun, Spindel, Hyperlipidemi, ERCP, Droger",
+      "Idiopatisk, Gallsten, Etanol, Trauma, Steroider, Malignitet, Autoimmun, Skorpion, Hypertoni, ERCP, Droger"
+    ],
+    correct: 3
+  },
+  {
+    num: 5,
+    text: "Vilken symtomkombination har högst PPV för icke-metastaserad kolorektal cancer?",
+    options: [
+      "Blod i avföringen tillsammans med förändrade avföringsvanor.",
+      "Buksmärta och ändrade avföringsvanor.",
+      "Viktnedgång och ändrade avföringsvanor.",
+      "Minskad aptit och blod i avföringen.",
+      "Viktnedgång och buksmärta."
+    ],
+    correct: 1
+  },
+  {
+    num: 6,
+    text: "En kvinna med asymtomatiskt ljumskbråck undrar om hon kan avstå från operation. Vilket alternativ stämmer bäst?",
+    options: [
+      "Javisst – oskuret är bäst och män ska prioriteras framför kvinnor.",
+      "Ja, det går bra att avvakta. Watch-and-wait-studier visar att man kan avvakta vid ringa symtom.",
+      "Nej, hon bör sättas upp för operation med hög prioritet.",
+      "Ja, eftersom du kliniskt kan känna att det rör sig om ljumskbråck.",
+      "Ja, det går bra."
+    ],
+    correct: 3
+  },
+  {
+    num: 7,
+    text: "35-årig man, 2 dygns perineal smärta, frossbrytningar. T 38°, lätt takykardi. Kraftigt ömmande indurerat område 2×3 cm vid analöppningen. LPK 15, CRP 80. Lämpligast handläggning?",
+    options: [
+      "Remiss poliklinisk MR med frågeställning perianalabscess/fistel – patienten skickas hem.",
+      "Inläggning med iv antibiotika och remiss akut DT för kartläggning.",
+      "Anmälan för operation med incision av misstänkt perianalabscess.",
+      "Patienten går hem med peroral antibiotika och smärtlindring.",
+      "Remiss akut MR – patienten väntar på akuten tills svar finns."
+    ],
+    correct: 3
+  },
+  {
+    num: 8,
+    text: "75-årig kvinna, akut buksmärta sedan gårdagen, lös avföring med blodtillblandning. Nytillkommet förmaksflimmer. Måttlig ömhet kring naveln. LPK 15, CRP 30. Hur handlägger du?",
+    options: [
+      "Ring op-sal och förbered akut laparotomi.",
+      "Skicka hem med ompalpation i morgon.",
+      "Beställ akut DT buköversikt med frågeställning tunntarmsileus och lägg in.",
+      "Lägg in fastande med iv antibiotika för observation.",
+      "Beställ akut DT buk med iv kontrast under frågeställning tarmischemi, med fokus på kärlocklusioner och tarmens viabilitet."
+    ],
+    correct: 5
+  },
+  {
+    num: 9,
+    text: "Vilka fynd ingår i AIR-score och Alvarado-score och är statistiskt associerade med appendicit?",
+    options: [
+      "Leukocytos, CRP-stegring, intervallsmärtor",
+      "< 2 dagars anamnes, leukocytos, neutrofili",
+      "< 2 dagars anamnes, peritonit, CRP-stegring",
+      "Peritonit, diarré, CRP-stegring",
+      "Kräkning, neutrofili, lokalt muskelförsvar"
+    ],
+    correct: 5
+  },
+  {
+    num: 10,
+    text: "Gunilla, 64 år, BMI 29, hypertoni. Vänster fossa-smärta sedan en vecka, lätt frossa, sveda vid miktion och avföring. CRP 65, urinsticka negativ för nitrit. Mjuk buk, ömhet vänster fossa. Diagnos och behandling?",
+    options: [
+      "Divertikulit – symtomen lindriga, räcker med peroral antibiotika.",
+      "Divertikulit – symtomen lindriga, räcker med lugnande besked, söka vid utebliven förbättring.",
+      "Divertikulit – CRP 65, viktigt förebygga komplikationer, inneliggande iv antibiotika.",
+      "Divertikulit – symtomen lindriga, inneliggande observation utan ytterligare föreskrifter.",
+      "Urinvägsinfektion – inläggning med iv antibiotika."
+    ],
+    correct: 2
+  },
+
+  // ── PREOPERATIV BEDÖMNING / ANESTESI ────────────────────────────────────────
+  {
+    num: 11,
+    text: "68-årig kvinna planeras för höftprotesoperation. Senaste månaden bröstsmärtor vid ansträngning som ceder i vila. Vilo-EKG utan ischemitecken. Vilken åtgärd är mest korrekt?",
+    options: [
+      "Skjut upp operationen och utred hjärtsymtomen.",
+      "Genomför operationen som planerat – risken är låg.",
+      "Lägg in patienten för övervakning och betablockad.",
+      "Ge nitroglycerin som profylax under operation.",
+      "Byt anestesimetod till spinal för att minska risken."
+    ],
+    correct: 1
+  },
+  {
+    num: 12,
+    text: "70-årig IVA-patient efter stor bukkirurgi. Stigande laktat 3,5→5,2 mmol/L. Varm perifert. BT 100/60, HF 95, Hb 78, SaO₂ 97%, CO 4,0 L/min. Vilken åtgärd förbättrar DO₂ mest?",
+    options: [
+      "Ge 1 enhet erytrocytkoncentrat.",
+      "Öka ventilationsfrekvensen.",
+      "Höj FiO₂ till 1,0.",
+      "Ge 500 ml Ringer-Acetat.",
+      "Starta vasopressor för att höja MAP."
+    ],
+    correct: 1
+  },
+  {
+    num: 13,
+    text: "Lungfrisk IVA-patient på ventilator. Vilken ventilatinjustering påverkar syresättningen mest direkt?",
+    options: [
+      "Tidalvolymen",
+      "FiO₂",
+      "PEEP",
+      "I:E-förhållandet",
+      "Andningsfrekvens"
+    ],
+    correct: 2
+  },
+  {
+    num: 14,
+    text: "59-årig kvinna, hysterektomi i spinalanestesi. Postop: BT 70/40, puls 115, blek, ingen urin i KAD. Vilken orsak är mest sannolik?",
+    options: [
+      "Anafylaxi",
+      "Sepsis",
+      "Sympatikusblockad",
+      "Hjärtsvikt",
+      "Blödning"
+    ],
+    correct: 5
+  },
+  {
+    num: 15,
+    text: "Vid anestesiinduktion sjunker ofta blodtrycket. Vilken orsak är mest trolig?",
+    options: [
+      "Hypovolemi",
+      "Vasodilatation",
+      "Anafylaxi",
+      "Negativ inotrop effekt",
+      "Sympaticusstimulering"
+    ],
+    correct: 2
+  },
+  {
+    num: 16,
+    text: "Svårt lungsjuk IVA-patient, trakeostomi, volymkontrollerad ventilation. Plötsligt larm för ökat luftvägstryck. Blodgas: pCO₂ 7,9 kPa, SaO₂ 88%. Tyst auskultation vänster lunga. Mest sannolik orsak?",
+    options: [
+      "Kanyldislokation",
+      "Atelektas",
+      "Sekretstagnation",
+      "Bronkospasm",
+      "Pneumothorax"
+    ],
+    correct: 5
+  },
+  {
+    num: 17,
+    text: "60-årig KOL-patient, akut försämring. Blodgas: pH 7,28, pCO₂ 8,5 kPa, pO₂ 7,8, BE +10. Vilken tolkning är mest trolig?",
+    options: [
+      "Respiratorisk acidos utan metabol kompensation",
+      "Respiratorisk alkalos med metabol kompensation",
+      "Akut respiratorisk acidos på kronisk bas",
+      "Kombinerad metabol och respiratorisk acidos",
+      "Metabol alkalos med respiratorisk kompensation"
+    ],
+    correct: 3
+  },
+  {
+    num: 18,
+    text: "24-årig man, multitrauma. Fick 4 E 0-negativt blod. Kalcium på blodgas sjunker till 0,9 mmol/L. Mest sannolik förklaring?",
+    options: [
+      "Hypoventilation som sänker kalcium",
+      "Hypotermi som minskar kalciumfrisättningen",
+      "Leverns omsättning av kalcium ökar",
+      "Citratet i det 0-negativa blodet binder kalcium",
+      "Spädningseffekt när blodvolymen ökar"
+    ],
+    correct: 4
+  },
+  {
+    num: 19,
+    text: "70-årig man med kronisk njursvikt efter höftoperation. Fått upprepade morfindoser. Nu konfusionell och andas långsamt. Mest sannolik orsak?",
+    options: [
+      "Metabol alkalos",
+      "Morfinöverdosering",
+      "Pneumoni",
+      "Hypoglykemi",
+      "Alkoholabstinens"
+    ],
+    correct: 2
+  },
+  {
+    num: 20,
+    text: "78-årig man, agiterad och desorienterad på uppvaket efter lång operation. BT 170/95, puls 105. Blodgas: pH 7,44, pCO₂ 4,5, pO₂ 10,5, Na 138, K 3,8. Mest sannolik orsak?",
+    options: [
+      "Stroke",
+      "Hypoxi",
+      "Hypokapni",
+      "Smärta och delirium",
+      "Metabol alkalos"
+    ],
+    correct: 4
+  },
+
+  // ── ORTOPEDI ────────────────────────────────────────────────────────────────
+  {
+    num: 21,
+    text: "Distorsionsvåld i fotleden utan skelettskada. Vilken är den vanligaste ligamentskadan?",
+    options: [
+      "lig. deltoideum",
+      "lig. fibulotalare anterius",
+      "lig. fibulotalare posterius",
+      "lig. fibulocalcaneare",
+      "Syndesmosen"
+    ],
+    correct: 2
+  },
+  {
+    num: 22,
+    image: "images/REPONERA.jpg",
+    text: "Ambulansen inkommer med en patient med uppenbar fotledsskada (se bild – luxerad fotled). Vad gör du härnäst?",
+    options: [
+      "Tar detaljerad anamnes med komplett fotstatus.",
+      "Varskor ortopedbakjour.",
+      "Lägger gips.",
+      "Skyndsam röntgen.",
+      "Reponerar fotleden innan röntgen."
+    ],
+    correct: 5
+  },
+  {
+    num: 23,
+    text: "62-årig överviktig man med måttlig knäartros, stillasittande arbete. Vilken behandling bör erbjudas i första hand enligt riktlinjer?",
+    options: [
+      "Knäproteskirurgi",
+      "GLP-1-agonist för viktreduktion",
+      "Fysioterapi och patientutbildning",
+      "Paracetamol i fulldos och NSAID vid behov",
+      "Kortisoninjektion i knäleden"
+    ],
+    correct: 3
+  },
+  {
+    num: 24,
+    text: "82-årig kvinna, antikoagulerad. Barnbarnet noterat en knöl på underbenet. Oöm, välavgränsad, 7 cm, fast mot tibia, rödaktig hud. Vilket alternativ stämmer bäst?",
+    options: [
+      "Skriver remiss för MR-undersökning.",
+      "Lägger bedövning och öppnar resistensen med en kniv.",
+      "Ber henne massera resistensen.",
+      "Ber henne avvakta och återkomma vid smärta.",
+      "Skriver remiss för ultraljudsundersökning."
+    ],
+    correct: 1
+  },
+  {
+    num: 25,
+    image: "images/FASCIOTOMI.jpg",
+    text: "41-årig man, MC-olycka under GHB-påverkan. Fraktur underbenet (se röntgen). Oerhört smärtpåverkad trots morfin, passiv smärta vid rörelse, parestesier. Inga öppna sår. Palpabla pulsar. Mest rimliga nästa steg?",
+    options: [
+      "Lägg gipsskena för att stabilisera frakturen.",
+      "Starta intravenös antibiotika.",
+      "Beställ CT.",
+      "Op-anmäl för extern fixation.",
+      "Ring in ortopedbakjour för fasciotomi."
+    ],
+    correct: 5
+  },
+  {
+    num: 26,
+    text: "32-årig man, fall 3 m. Kotkompression Th12 med 40% höjdminskning, intakta bakre strukturer. MR: ingen ryggmärgskompression. Inga neurologiska bortfall. Vilken behandling är mest lämplig?",
+    options: [
+      "Operation endast om kyfosvinkeln ökar vid uppföljning.",
+      "Omedelbar operation med bakre fixation.",
+      "Trepunktskorsett och mobilisering efter smärta med fysioterapi.",
+      "Gipskorsett i 12 veckor.",
+      "Traktion och sängläge i 6 veckor."
+    ],
+    correct: 3
+  },
+  {
+    num: 27,
+    text: "Erik, 22 år, kattbett i handen för ett par timmar sedan. Volart i tenarlogen: två sår, kraftig svullnad och rodnad. Vilken patogen är mest sannolik?",
+    options: [
+      "Pasteurella multocida",
+      "Staphylococcus aureus",
+      "Alfastreptokocker",
+      "Kingella kingae",
+      "Eikenella corrodens"
+    ],
+    correct: 1
+  },
+  {
+    num: 28,
+    text: "68-årig man, höftsmärta i flera år, svårt ta på strumpor, gångsträcka ~500 m. Vilket symtom är mest typiskt för höftartros?",
+    options: [
+      "Smärtsamma upphakningar vid obelastade rörelser i leden.",
+      "Smärta över trokanter major vid gång.",
+      "Nattlig värk i glutealregionen.",
+      "Uttalad morgonstelhet > 1 timme.",
+      "Smärta i ljumsken vid belastning."
+    ],
+    correct: 5
+  },
+  {
+    num: 29,
+    text: "68-årig kvinna, tilltagande smärta och stelhet i höger knä, nedsatt rörlighet, ingen rodnad. Misstänkt artros. Vilken diagnostisk metod är mest lämplig?",
+    options: [
+      "MR",
+      "CT av knäleden",
+      "Artroskopi",
+      "Blodprov med inflammationsmarkörer",
+      "Klinisk undersökning och anamnes"
+    ],
+    correct: 5
+  },
+  {
+    num: 30,
+    text: "58-årig diabetiker, spondylodiskit L3–L4 (Staph aureus i blododling). CRP 220. Ej septisk, inga neurologiska bortfall. Viktigaste initiala åtgärden?",
+    options: [
+      "Mobilisering med korsett och peroral antibiotika.",
+      "Akut kirurgisk dekompression.",
+      "Start av peroral antibiotika innan odlingssvar.",
+      "Smärtlindring och avvakta.",
+      "Inläggning för intravenös antibiotikabehandling."
+    ],
+    correct: 5
+  },
+  {
+    num: 31,
+    text: "20-årig kvinna, trafikolycka. Secondary survey, fördjupad anamnes enligt AMPLE. Vad står bokstaven P för?",
+    options: [
+      "Past medical history / Pregnancy",
+      "Point of injury / signs",
+      "Pain medication preference",
+      "Pills / Allergies",
+      "Past medical history / Pills"
+    ],
+    correct: 1
+  },
+
+  // ── RADIOLOGI ────────────────────────────────────────────────────────────────
+  {
+    num: 32,
+    image: "images/PANCREATIT.jpg",
+    text: "59-årig man söker med buksmärta. CT-bilder visas. Vilken radiologisk diagnos stämmer bäst? (Bilderna visar peripankreatisk inflammation/nekros)",
+    options: [
+      "Fri gas",
+      "Divertikulit",
+      "Appendicit",
+      "Tunntarmsileus",
+      "Pancreatit"
+    ],
+    correct: 5
+  },
+
+  // ── KÄRLKIRURGI ─────────────────────────────────────────────────────────────
+  {
+    num: 33,
+    image: "images/NEDOMKNÄT.jpg",
+    text: "Kaj, ex-rökare, utbredd ateroskleros i SFA, vilovärk och sårbildning höger fot. CT-angiografi 3D visas efter kärlkirurgi. Vad kallas operationen?",
+    options: [
+      "Femoro-poplietal bypass ovan knät",
+      "Subintimal rekanalisering",
+      "Femoro-poplietal bypass nedom knät",
+      "Trombendartärektomi",
+      "Interponat a poplitea"
+    ],
+    correct: 3
+  },
+
+  // ── ONKOLOGI ────────────────────────────────────────────────────────────────
+  {
+    num: 34,
+    text: "Gunnar, 67 år, melanommetastas i vänster axill. MDK föreslår immunterapi → operation → ev. fortsatt immunterapi. Du planerar 2 cykler immunterapi FÖRE operation. Vad kallas detta och vad är syftet?",
+    options: [
+      "Adjuvant behandling i syfte att eliminera mikrometastasering och minska risk för återfall.",
+      "Adjuvant behandling för att eliminera risken för mikrometastasering och återfall.",
+      "Palliativ behandling i syfte att förlänga tid till återfall.",
+      "Neoadjuvant behandling i syfte att eliminera mikrometastasering, krympa tumör och minska risk för återfall.",
+      "Neoadjuvant behandling i syfte att få bort metastasen så operation ej behöver göras."
+    ],
+    correct: 4
+  },
+  {
+    num: 35,
+    text: "Patient med skelettmetastaserad prostatacancer, plötslig ryggsmärta och svaghet i benen. Misstänkt medullakompression. Vilket alternativ stämmer bäst?",
+    options: [
+      "Viktigaste behandlingen är cytostatika.",
+      "Snabb handläggning med kortison, inläggning och akut MR rygg (inför ev. akut ryggkirurgi) är viktig.",
+      "Snabb handläggning och insättning av högdos kortison – om bättre kan gå hem i väntan på beslut.",
+      "Snabb handläggning och start av strålbehandling för att hindra metastasering.",
+      "Direkt CT buk och thorax för att undersöka ytterligare metastasering."
+    ],
+    correct: 2
+  },
+  {
+    num: 36,
+    text: "För vilka cancerformer finns det nationella screeningprogram i Sverige idag?",
+    options: [
+      "Bröstcancer, Cervixcancer och Lungcancer",
+      "Bröstcancer, Kolorektalcancer och Prostatacancer",
+      "Bröstcancer, Cervixcancer och Kolorektalcancer",
+      "Cervixcancer, Kolorektalcancer och Pancreascancer",
+      "Bröstcancer, Prostatacancer och Malignt melanom"
+    ],
+    correct: 3
+  },
+
+  // ── AKUTKIRURGI / MJUKDELAR ──────────────────────────────────────────────────
+  {
+    num: 37,
+    text: "68-årig man med alkoholmissbruk, cirros, DM och hypertoni, IVA-vårdad för sepsis. Urolog ser uttalad rodnad, nekros och illaluktande skrotum höger sida, extenderar mot ljumske/lår. Utbredningen har förvärrats senaste timmen. Vilken åtgärd är mest korrekt?",
+    options: [
+      "Beställa ny CT med kontrast för kartläggning.",
+      "Kontakta hudklinik för bedömning.",
+      "Beställa akut ultraljud av skrotum.",
+      "Anmäla patienten för akut operation på misstanke om Fourniers gangrän.",
+      "Ge ytterligare vätskebehandling och avvakta antibiotikaeffekt."
+    ],
+    correct: 4
+  },
+  {
+    num: 38,
+    image: "images/SÅR.jpg",
+    text: "Jourcentral: sjuksköterska ber dig titta på ett litet finger-sår hon tänkt tejpa. Bilden visar ett lacerat fingertoppssår. Vilket alternativ stämmer bäst?",
+    options: [
+      "Nervskador är viktiga i den här nivån.",
+      "Infektion är en risk – ge antibiotika.",
+      "Lägg sutur så att såret inte blöder när fingret rörs.",
+      "Även om hudskadan är liten kan djupa strukturer (t.ex. böjsenor) vara skadade. Du behöver undersöka patienten.",
+      "Så länge patienten kan röra på fingret och inte har ont kan skadan tejpas."
+    ],
+    correct: 4
+  },
+
+  // ── ONKOLOGI (forts.) ────────────────────────────────────────────────────────
+  {
+    num: 39,
+    text: "~20% av de 60 000 cancerfall per år i Sverige har metastaser vid diagnos, i vissa fall okänd primärtumör. Vilket alternativ stämmer bäst?",
+    options: [
+      "CT-hjärna ska göras på alla patienter.",
+      "Onkologen håller i utredningen.",
+      "Alla patienter med nyupptäckta metastaser ska remitteras enligt SVF-CUP.",
+      "Utredningen syftar till att hitta primärtumören.",
+      "Primärtumören har inte betydelse för fortsatt behandling."
+    ],
+    correct: 4
+  },
+  {
+    num: 40,
+    text: "22-årig man söker på VC med hjärtklappning. Vid sköldkörtelundersökning ses en 3 cm knöl. Vilket alternativ är mest rätt?",
+    options: [
+      "Remiss röntgen för CT utan kontrast.",
+      "Remiss röntgen för ultraljud och cytologi.",
+      "Remiss röntgen för jod-scintigrafi.",
+      "Om patienten har hypertyreos behöver knölen ej utredas vidare.",
+      "Remiss endokrin medicin för utredning av toxiskt adenom."
+    ],
+    correct: 2
+  },
+
+  // ── BRÖSTCANCER ─────────────────────────────────────────────────────────────
+  {
+    num: 41,
+    text: "Gun, 65 år, screeningdetekterad bröstcancer. Op: partiell mastektomi + sentinel node. PAD: 25 mm lobulär cancer, BRE 6p, NHG Grad II, ER 100%, PR 100%, 2 sentinel nodes utan metastas. Vilken adjuvant behandlingsrekommendation?",
+    options: [
+      "Strålbehandling mot bröstet.",
+      "Cytostatika, strålbehandling mot bröstet och endokrin terapi med Tamoxifen.",
+      "Cytostatika, strålbehandling mot bröstet och endokrin terapi med aromatashämmare.",
+      "Strålbehandling mot bröstet, endokrin terapi med GnRH-analog och aromatashämmare.",
+      "Strålbehandling mot bröstet, endokrin terapi med aromatashämmare."
+    ],
+    correct: 5
+  },
+
+  // ── PLASTIKKIRURGI ───────────────────────────────────────────────────────────
+  {
+    num: 42,
+    text: "Vid vilken plastikkirurgisk rekonstruktionsmetod krävs alltid kärlanastamoser?",
+    options: [
+      "Fri lambå",
+      "Fullhudslambå",
+      "Delhudslambå",
+      "Lokal lambå",
+      "Stjälkad lambå"
+    ],
+    correct: 1
+  },
+
+  // ── BRÖSTCANCER (forts.) ─────────────────────────────────────────────────────
+  {
+    num: 43,
+    text: "Lisa, 49 år, 1,5 cm intraduktal cancer vänster bröst. BRE 8p/NHG Grad III, ER 100%, PR 70%, Ki67 38%, HER2-amplifierad. Misstänkt axillmetastas (cytologi negativ). MDK. Vad blir behandlingsrekommendationen primärt?",
+    options: [
+      "Neoadjuvant enkel blockad (trastuzumab) + cytostatika. Ny konferens efter.",
+      "Primär op med bröstbevarande kirurgi och axillutrymning. Ny konferens efter.",
+      "Primär op med bröstbevarande + sentinel node. Ny konferens efter.",
+      "Primär op med mastektomi och sentinel node. Ny konferens efter.",
+      "Neoadjuvant dubbel antikroppsblockad (trastuzumab + pertuzumab) + cytostatika. Ny konferens efter."
+    ],
+    correct: 5
+  },
+
+  // ── HANDKIRURGI ─────────────────────────────────────────────────────────────
+  {
+    num: 44,
+    image: "images/TENDOVAGINIT.jpg",
+    text: "Per, 54-årig bilmekaniker, sticker sig ibland i handen. Söker med smärta i höger pekfinger sedan några timmar. Bilden visar ett rött, svullet, semiflekterat finger. Mest sannolik diagnos?",
+    options: [
+      "Brännskada i dig 2",
+      "Skada i flexor digitorum superficialis",
+      "Septisk tendovaginit",
+      "Allergisk reaktion",
+      "Septisk artrit i PIP-led"
+    ],
+    correct: 3
+  },
+  {
+    num: 45,
+    text: "Vid suturering är det viktigt med rätt nålteknik. Vilket alternativ stämmer bäst?",
+    options: [
+      "Suturnålen ska stickas in med 90 graders vinkel mot huden.",
+      "Suturnålen ska stickas in med 60 graders vinkel mot huden.",
+      "Suturnålens vinkel spelar ingen roll.",
+      "Suturnålen ska stickas in med 45 graders vinkel mot huden.",
+      "Suturnålen ska stickas in med 25 graders vinkel mot huden."
+    ],
+    correct: 1
+  },
+
+  // ── THYROIDEAKIRURGI ─────────────────────────────────────────────────────────
+  {
+    num: 46,
+    text: "55-årig man söker jourmottagning dagen efter total tyreoidektomi + lateral lymfkörtelutrymning. Svullnad på halsen, tungt att andas, yr. Vilket alternativ är mest rätt?",
+    options: [
+      "Postoperativ blödning med högt andningshinder – hanteras akut.",
+      "Postoperativ blödning med cirkulatorisk chock – hanteras akut.",
+      "Bilateral stämbandspares med högt andningshinder – hanteras akut.",
+      "Normalt postoperativt förlopp, kan gå hem.",
+      "Lymfläckage – kan följas upp via kirurgmottagningen imorgon."
+    ],
+    correct: 1
+  },
+
+  // ── RADIOLOGI (forts.) ────────────────────────────────────────────────────────
+  {
+    num: 47,
+    image: "images/HERNIA.jpg",
+    text: "81-årig man, tilltagande buksmärta. CT visas. Vilket alternativ stämmer bäst med bilderna?",
+    options: [
+      "Ingen fri gas. Ljumskbråk med hernierad tunntarmsslynga utan tecken på ileus.",
+      "Ingen fri gas. Paralytisk ileus sekundärt till kraftig appendicit.",
+      "Ingen fri gas. Tunntarmsileus sekundärt till ljumskbråk med hernierad tunntarmsslynga.",
+      "Ingen fri gas. Colonileus sekundärt till ljumskbråk med hernierad colonslynga.",
+      "Fri gas. Ljumskbråk med hernierad colonslynga utan tecken på ileus."
+    ],
+    correct: 3
+  },
+
+  // ── UROLOGI ─────────────────────────────────────────────────────────────────
+  {
+    num: 48,
+    text: "43-årig kvinna med feber 38,9, högersidiga flanksmärtor. Behandlades med mecillinam tre dagar. Nu: krea 109, CRP 101, LPK 15,2, BT 92/57, puls 115. Ska läggas in. Optimalt behandlingsalternativ?",
+    options: [
+      "Ge iv antibiotika, syrgas och 1 L Ringer-Acetat, samt kontakta IVA-jouren.",
+      "Skicka hem med mer potent po antibiotika (Bactrim Forte).",
+      "Beställ CT för att ställa diagnosen pyelonefrit.",
+      "Avlasta höger njure – kontakta röntgenläkare direkt.",
+      "Inläggning med iv antibiotika och nya prover imorgon."
+    ],
+    correct: 1
+  },
+
+  // ── BRÄNNSKADOR ─────────────────────────────────────────────────────────────
+  {
+    num: 49,
+    image: "images/DELHUD.jpg",
+    text: "Patient med brännskador på låren (djupa partiella/fullhudsbrännskador, se bild). Du är AT-läkare på länssjukhus Norrland. Hur behandlas skadan?",
+    options: [
+      "Behandla med grupp 3-steroid i 2 veckor.",
+      "Lägga om med salvkompress och inom snar framtid kirurgiskt revidera och transplantera med delhud.",
+      "Upprepade omläggningar med salvkompress tills det läker.",
+      "Lägga yoghurt på såret dagligen.",
+      "Duscha och hålla rent tills det läker."
+    ],
+    correct: 2
+  },
+
+  // ── ENDOKRINKIRURGI ─────────────────────────────────────────────────────────
+  {
+    num: 50,
+    text: "26-årig man söker för nedsatt ork. Misstanke om hyperparatyreoism. Vilka prover/undersökningar behövs för att ställa diagnosen HPT?",
+    options: [
+      "Blodprov: PTH, kreatinin samt bentäthetsmätning.",
+      "Ultraljud hals och cytologi.",
+      "Ultraljud hals och sestamibi-scintigrafi.",
+      "Blodprov: PTH, D-vitamin och ALP samt urinprov: urin-calcium.",
+      "Blodprov: PTH, calcium."
+    ],
+    correct: 5
+  },
+
+  // ── RYGSMÄRTA ────────────────────────────────────────────────────────────────
+  {
+    num: 51,
+    text: "45-årig kvinna, ländryggssmärta sedan 3 veckor, kom efter trädgårdsarbete. Testat ibuprofen utan effekt. Normal neurologi. Vilket påstående om lumbago är korrekt?",
+    options: [
+      "Lumbago ska bedömas som kronisk smärta om symtomen kvarstår > 6 veckor.",
+      "MR vid lumbago är alltid helt normal.",
+      "Lumbago är alltid associerad med radiologiska förändringar.",
+      "MR är indicerat om smärta kvarstår efter 4 veckor.",
+      "Majoriteten av patienter med lumbago upplever symtomfrihet inom 6 veckor efter debut."
+    ],
+    correct: 5
+  },
+
+  // ── UROLOGI (forts.) ─────────────────────────────────────────────────────────
+  {
+    num: 52,
+    text: "31-årig man, tilltagande smärta och svullnad vänster testikel sedan ett dygn. Förstorad, ömmande och fast testikel. Epididymis svår att särskilja. Ingen feber, inga miktionsbesvär. Vilken undersökning är mest lämplig?",
+    options: [
+      "Ultraljud av skrotum för att bedöma kärlflöde och struktur.",
+      "Akut explorativ kirurgi för att utesluta testistorsion.",
+      "Urinprov och klamydiatest för att utesluta epididymit.",
+      "CT buk och bäcken för retroperitoneala lymfkörtlar.",
+      "MR av skrotum för att bedöma eventuell tumörinväxt."
+    ],
+    correct: 1
+  },
+
+  // ── RADIOLOGI (forts.) ────────────────────────────────────────────────────────
+  {
+    num: 53,
+    image: "images/SPLENOMEGALI.jpg",
+    text: "CT-bilder visas (kraftigt förstorad mjälte). En sjuksköterskestudent frågar vad man ser. Vilken patologi identifieras?",
+    options: [
+      "Urinvägskonkrement",
+      "Gallvägsdilatation",
+      "Aortadissektion",
+      "Pancreatit",
+      "Splenomegali"
+    ],
+    correct: 5
+  },
+
+  // ── BRÄNNSKADOR (forts.) ─────────────────────────────────────────────────────
+  {
+    num: 54,
+    image: "images/DELHUD.jpg",
+    text: "Patient fick het vattenkokare på sig. Bilden visar skada med områden A–E. Var är störst sannolikhet för fullhudsbrännskada (tredje graden)?",
+    options: [
+      "D",
+      "E",
+      "B",
+      "C",
+      "A"
+    ],
+    correct: 4
+  },
+
+  // ── ONKOLOGI (forts.) ────────────────────────────────────────────────────────
+  {
+    num: 55,
+    text: "Vilken tumörform har ökat snabbast i förekomst i Sverige de senaste 3 åren?",
+    options: [
+      "Prostatacancer",
+      "Lungcancer",
+      "Malignt melanom",
+      "Bröstcancer",
+      "Pancreascancer"
+    ],
+    correct: 3
+  },
+  {
+    num: 56,
+    text: "Vid vilket smärttillstånd är den dominerande mekanismen nociplastisk smärta?",
+    options: [
+      "Rizopati sekundärt till diskbråck",
+      "Fibromyalgi",
+      "Smärta vid akut kotkompression",
+      "Reumatoid artrit",
+      "Postoperativ smärta"
+    ],
+    correct: 2
+  },
+  {
+    num: 57,
+    text: "Immunrelaterad kolit är en allvarlig biverkan till immunterapi. Vilket alternativ är mest korrekt?",
+    options: [
+      "Lokala steroider direkt till tarmen är förstahandsalternativ.",
+      "Immunterapi kan fortsätta ges oberoende av kolitsymtom.",
+      "CT kolon är den bästa diagnosmetoden och ska alltid göras.",
+      "Loperamid är kontraindicerat då det maskerar symtom.",
+      "Kortikosteroider oralt eller iv är effektiv behandling som häver koliten hos de flesta."
+    ],
+    correct: 5
+  },
+
+  // ── HANDKIRURGI (forts.) ─────────────────────────────────────────────────────
+  {
+    num: 58,
+    text: "47-årig sekreterare vaknar på nätterna med stickningar och domningar i tumme, pek- och långfinger. Skakar handen för att lindra. Dagtid svag hand, tappar saker. Mest sannolik diagnos?",
+    options: [
+      "Ulnarisnervinklämning i armbåge",
+      "Ulnarisnervinklämning i handled",
+      "De Quervains tendovaginit",
+      "Karpaltunnelsyndrom",
+      "Diskbråck i nacken"
+    ],
+    correct: 4
+  },
+
+  // ── UROLOGI (forts.) ─────────────────────────────────────────────────────────
+  {
+    num: 59,
+    text: "24-årig man, plötslig flanksmärta höger sida, strålar mot ljumsken. Krea 86, LPK 11, CRP 8. CT: 4 mm uretärsten 5 cm från uretärostiet. Smärtfri efter oxykodon. Vill gå hem. Handläggning?",
+    options: [
+      "Ordinera smärtlindring, uppföljande sten-CT och remiss urolog – kan gå hem.",
+      "Akut utredning för endokrin rubbning.",
+      "Skickas hem och planeras för ESWL senare i veckan.",
+      "Läggs in med antibiotika inför perkutan stenextraktion.",
+      "Urologjour – omedelbar inläggning och akut operation."
+    ],
+    correct: 1
+  },
+  {
+    num: 60,
+    text: "Sven, 63 år, prostatacancer T1cN0M0, Gleasonsumma 3+3=6, PSA 4,3. Vilket alternativ är bäst?",
+    options: [
+      "Aktiv monitorering",
+      "GnRH-agonist",
+      "Extern strålbehandling",
+      "Radikal prostatektomi",
+      "Brakyterapi"
+    ],
+    correct: 1
+  },
+
+  // ── HANDKIRURGI (forts.) ─────────────────────────────────────────────────────
+  {
+    num: 61,
+    image: "images/DUPUYTREN.jpg",
+    text: "Bengt, granne, visar sin hand. Kan inte sträcka fingrarna sedan månader. Besvären smygande. Ingen värk. Fingrarna är krokiga (se bild – flexionskontraktur 4:e fingret). Mest sannolik diagnos?",
+    options: [
+      "Dupuytrens kontraktur",
+      "Triggerfinger",
+      "Basaliom",
+      "Kronisk låg-virulent tendovaginit av flexorsenor till dig 4",
+      "De Quervains tenosynovit"
+    ],
+    correct: 1
+  },
+
+  // ── OBESITASKIRURGI ──────────────────────────────────────────────────────────
+  {
+    num: 62,
+    text: "45-årig kvinna, BMI 45, röker 45 cigaretter/dag, 4–5 glas vin/vecka. Mounjaro 4,5 mg/v, -4,5 kg. B-PEth 0,45, AUDIT 4–5p. Söker obesitaskirurgisk konsultation. Din bedömning?",
+    options: [
+      "Indikation finns men patienten bör dra ner på alkohol – rökning är ingen kontraindikation.",
+      "Ingen indikation – patienten måste minska alkohol och rökning till max 4–5 cigaretter/dag.",
+      "Indikation finns men patienten måste vara dokumenterat alkoholfri i minst ett år och sluta röka.",
+      "Ingen indikation – fortsätt Mounjaro till maxdos i minst 4–5 månader.",
+      "Indikation finns – efter operation minskar alkohol och rökning sannolikt av sig."
+    ],
+    correct: 3
+  },
+
+  // ── KÄRLKIRURGI (forts.) ─────────────────────────────────────────────────────
+  {
+    num: 63,
+    text: "Hur mäts ABI korrekt vid misstänkt benartärsjukdom? Vilket alternativ motsvarar det rätta sättet?",
+    options: [
+      "Manschett nära fotleden, stetoskop, lyssnar till pulsljudet försvinner och återkommer. Systoliskt + diastoliskt noteras.",
+      "Manschett nära fotleden, doppler-penna, lyssnar till pulsljudet försvinner, fortsätter 20 mmHg, noterar när det återkommer. Båda tibialartärerna undersöks, högsta trycket används.",
+      "Manschett nära fotleden, doppler-penna, en artär undersöks, det enda trycket används.",
+      "Manschett mitt på vaden, doppler-penna, lyssnar, noterar trycket när pulsen försvinner.",
+      "Manschett nära fotleden, blåses upp till 200 mmHg, noterar när pulsen återkommer."
+    ],
+    correct: 2
+  },
+
+  // ── RADIOLOGI (forts.) ────────────────────────────────────────────────────────
+  {
+    num: 64,
+    text: "Vilken diagnos kräver iv kontrastmedel för hög sensitivitet och specificitet vid DT?",
+    options: [
+      "Aortadissektion",
+      "Pancreatit",
+      "Divertikulit",
+      "Aortaaneurysmruptur",
+      "Appendicit"
+    ],
+    correct: 1
+  },
+
+  // ── UROLOGI (forts.) ─────────────────────────────────────────────────────────
+  {
+    num: 65,
+    text: "72-årig man, BPH, akut urinstämma. Krea 740, K 6,2. Kateterisering ger 1100 ml. Efteråt lätt hypotensiv och illamående. Vilken åtgärd är mest korrekt?",
+    options: [
+      "Akut CT urinvägar med kontrast.",
+      "Vätskedrivande och glukos/insulin för att sänka kalium.",
+      "Skicka hem med kateter, återbesök VC.",
+      "Lägga in för observation, mät urinproduktion och elektrolyter de närmaste dygnen, korrigera vid behov.",
+      "Behåll kateter, remiss urolog skyndsamt för prostataingrepp."
+    ],
+    correct: 4
+  },
+
+  // ── ORTOPEDI (forts.) ────────────────────────────────────────────────────────
+  {
+    num: 66,
+    image: "images/CALCANEUS.jpg",
+    text: "56-årig man, fall från stege 2–3 m. Palpöm svullnad laterala malleolen och bak mot hälen. Röntgen visas. Vilken diagnos?",
+    options: [
+      "Fraktur i laterala malleolen",
+      "Fraktur genom processus posterior tibiae",
+      "Fraktur i calcaneus",
+      "Ingen fraktur",
+      "Fraktur i talus"
+    ],
+    correct: 3
+  },
+
+  // ── TRAUMA ───────────────────────────────────────────────────────────────────
+  {
+    num: 67,
+    text: "50-årig man, fall från stege. Fri luftväg. AF 30, nedsatta andningsljud höger sida, SaO₂ 85%, BT 90/60. Kraftigt felställd höger fotled, blek och kall. Vilken är din FÖRSTA åtgärd?",
+    options: [
+      "Starta masstransfusion.",
+      "Reponera fotledsfrakturen och kontrollera distala pulsar.",
+      "Ordinera rtg höger fotled.",
+      "Avlasta höger thorax med grov PVK/thoracostomi.",
+      "Gå direkt till trauma-CT."
+    ],
+    correct: 4
+  },
+
+  // ── UROLOGI (forts.) ─────────────────────────────────────────────────────────
+  {
+    num: 68,
+    text: "77-årig man, makrohematuri och sveda vid miktion i 2 veckor. Känd prostatacancer op för 10 år sedan, PSA omätbart. Urinsticka 3+ erytrocyter annars blank. Vilken utredning?",
+    options: [
+      "MR prostata och njurar för eventuell tumörväxt.",
+      "CT-urografi och cystoskopi för att utreda övre och nedre urinvägar.",
+      "Urinodling och empirisk antibiotikabehandling.",
+      "Ny PSA och prostatabiopsi för att utesluta recidiv.",
+      "Enbart ultraljud av urinblåsan."
+    ],
+    correct: 2
+  },
+
+  // ── KÄRLKIRURGI (forts.) ─────────────────────────────────────────────────────
+  {
+    num: 69,
+    image: "images/CT.jpg",
+    text: "Tre bildgivande metoder vid benartärsjukdom: doppler-UL, CT-angiografi och MR-angiografi. Vilket alternativ beskriver metoderna korrekt?",
+    options: [
+      "Dopplerförstärkt UL visar vare sig diameter, stenoser eller flöde. CT visar kalkbörda men medger bara en undersökning/månad. MR är mycket dyr.",
+      "Dopplerförstärkt UL är bra på att identifiera och kvantifiera stenoser men undersökarberoende och ej alltid tillgängligt. CT finns dygnet runt och visar kalkbördan, men distala underbensartärer är svåra att bedöma. MR undviker strålning men konventionella 3D-bilder visar enbart kontrast och kalkbörda kan ej bedömas.",
+      "Dopplerförstärkt UL visar ocklusioner men inte stenoser. CT visar inte tromber eller stenoser. MR finns dygnet runt och visar allt.",
+      "Dopplerförstärkt UL kvantifierar tryck. CT ger flöde kvantifierat. MR undviker ej strålning men visar kalkbörda och stenoser.",
+      "Dopplerförstärkt UL har enbart fördelar. CT används sällan pga nefrotoxicitet. MR visar kontrastfyllda kärl och kalkbörda."
+    ],
+    correct: 2
+  },
+
+  // ── RADIOLOGI (forts.) ────────────────────────────────────────────────────────
+  {
+    num: 70,
+    image: "images/UTANIV.jpg",
+    text: "78-årig man, vänstersidiga flanksmärtor. DT: konkrement proximalt vänster uretär (PUJ). Vilket alternativ stämmer bäst med bilderna i övrigt?",
+    options: [
+      "Utan iv kontrastmedel. Konkrement proximalt vänster uretär och måttlig hydronefros. Tydligt vätskeutträde kring njuren.",
+      "Med iv kontrastmedel. Konkrement proximalt vänster uretär, ingen hydronefros. Tydligt vätskeutträde kring njuren.",
+      "Med iv kontrastmedel. Konkrement proximalt vänster uretär och måttlig hydronefros. Ingen fri vätska i buken.",
+      "Utan iv kontrastmedel. Konkrement proximalt vänster uretär och måttlig hydronefros. Stora mängder ascites.",
+      "Utan iv kontrastmedel. Konkrement proximalt vänster uretär, ingen hydronefros. Ingen fri vätska."
+    ],
+    correct: 5
+  },
+
+  // ── TRAUMA (forts.) ──────────────────────────────────────────────────────────
+  {
+    num: 71,
+    text: "20-årig man, skottskador på hals, thorax och extremiteter. Svullnad höger halssida, sårskador lateralt om höger bröstvårta, svårighet att andas, blodblandad slem. Vilken är din FÖRSTA åtgärd?",
+    options: [
+      "Intubera patienten för att säkra luftvägen.",
+      "Gå direkt till operation för thorakotomi.",
+      "Titta med ultraljud för hemothorax höger sida.",
+      "Titta med ultraljud för hemothorax vänster sida.",
+      "Avlasta höger thorax med thoraxdrän."
+    ],
+    correct: 5
+  },
+
+  // ── BRÖSTCANCER (forts.) ─────────────────────────────────────────────────────
+  {
+    num: 72,
+    image: "images/BRÖST.jpg",
+    text: "Kvinna som fått en tumör indikerad med markör inför neoadjuvant behandling. Mammografibilder och ultraljud visas. I vilket bröst ser man markören och var ligger den (ungefärligt klockslag)?",
+    options: [
+      "Vänster bröst, kl 6",
+      "Vänster bröst, retromamillärt",
+      "Vänster bröst, kl 9",
+      "Höger bröst, kl 12",
+      "Höger bröst, kl 3"
+    ],
+    correct: 3
+  },
+
+  // ── KÄRLKIRURGI (forts.) ─────────────────────────────────────────────────────
+  {
+    num: 73,
+    image: "images/ANEURYSM.jpg",
+    text: "3D-rekonstruktion CTA, man född på 60-talet med flera kärlsjukdomar. Bilden visar markant utvidgning av a. iliaca interna. Vilken patologi har störst indikation för behandling utifrån bildinformationen?",
+    options: [
+      "Aortal åderförkalkning",
+      "Stenos i arteria renalis",
+      "Ett bukaortaaneurysm",
+      "Ett iliaca communis-aneurysm",
+      "Ett iliaca interna-aneurysm"
+    ],
+    correct: 5
+  },
+
+  // ── TRAUMA (forts.) ──────────────────────────────────────────────────────────
+  {
+    num: 74,
+    text: "50-årig man, DM, hypertoni, tidigare hjärtinfarkt. Cyklat omkull, slagit i huvudet. Hjälm spräckt. Medvetandesänkt. ATLS. Vad är viktigt att kontrollera under D?",
+    options: [
+      "GCS och Na",
+      "GCS och kreatinin",
+      "GCS och glukos",
+      "GCS och s-etanol",
+      "GCS och Hb"
+    ],
+    correct: 3
+  },
+
+  // ── ENDOKRINKIRURGI (forts.) ─────────────────────────────────────────────────
+  {
+    num: 75,
+    text: "35-årig kvinna, opererad för Graves sjukdom för 2 dagar sedan. Söker med pirrningar och stickningar runt munnen och i händerna. Vilket alternativ är mest rätt?",
+    options: [
+      "Brist på calcium – kontrollera blodprover och ordinera calcium.",
+      "Brist på tyreoideahormon – kontrollera blodprover och ordinera Levaxin.",
+      "Postoperativ stroke – beställ CT-hjärna akut.",
+      "Brist på parathormon – kontrollera blodprover och ordinera syntetiskt PTH.",
+      "Besvären behöver ej utredas akut – kan följas upp via kirurgmottagningen imorgon."
+    ],
+    correct: 1
+  },
+
+  // ── SEPSIS ───────────────────────────────────────────────────────────────────
+  {
+    num: 76,
+    text: "68-årig kvinna, sepsis enligt Sepsis-3. Laktat 5,1 mmol/L. Vad är den mest korrekta tolkningen av förhöjt laktatvärde vid sepsis?",
+    options: [
+      "Normalt syrgasvärde utesluter laktatstegring till följd av sepsis.",
+      "Laktat är vävnadstoxiskt och terapin inriktas på att sänka det.",
+      "Förhöjt laktat orsakas helt av anaerob metabolism till följd av vävnadshypoxi.",
+      "Laktatstegring ses enbart vid svår hypotension eller lågt cardiac output.",
+      "Laktatstegring vid sepsis är en viktig prognostisk markör och förklaras delvis av ökade katekolaminnivåer."
+    ],
+    correct: 5
+  }
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+const TOTAL = questions.length;
+let userAnswers = {}, answeredCount = 0, correctCount = 0;
+
+// ── Build DOM ────────────────────────────────────────────────────────────────
+function buildQuestions() {
+  const container = document.getElementById('questions-container');
+
+  // Section labels (approximate groupings)
+  const sections = {
+    1:  'GI-kirurgi',
+    11: 'Anestesi & perioperativ vård',
+    21: 'Ortopedi',
+    32: 'Radiologi & bildtolkning',
+    33: 'Kärlkirurgi',
+    34: 'Onkologi',
+    37: 'Akutkirurgi & mjukdelar',
+    41: 'Bröstcancer',
+    42: 'Plastikkirurgi',
+    44: 'Handkirurgi',
+    46: 'Tyreoideakirurgi',
+    48: 'Urologi',
+    49: 'Brännskador',
+    50: 'Endokrinkirurgi',
+    62: 'Obesitaskirurgi',
+    74: 'Trauma',
+    76: 'Sepsis'
+  };
+
+  questions.forEach(q => {
+    if (sections[q.num]) {
+      const label = document.createElement('div');
+      label.className = 'section-label';
+      label.textContent = sections[q.num];
+      container.appendChild(label);
+    }
+
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.id = `card-${q.num}`;
+
+    const opts = q.options.map((opt, i) =>
+      `<button class="opt-btn" id="opt-${q.num}-${i+1}" onclick="answer(${q.num}, ${i+1})">${opt}</button>`
+    ).join('');
+
+card.innerHTML = `
+  <div class="q-header">
+    <div class="q-num">${q.num}</div>
+    <div class="q-text">
+      ${q.image ? `<img src="${q.image}" alt="Frågebild" class="question-image">` : ""}
+      ${q.text}
+    </div>
+  </div>
+  <div class="options">${opts}</div>`;
+    container.appendChild(card);
+  });
+}
+
+function answer(qNum, chosen) {
+  if (userAnswers[qNum] !== undefined) return;
+  userAnswers[qNum] = chosen;
+  answeredCount++;
+
+  const q = questions.find(q => q.num === qNum);
+  const isCorrect = chosen === q.correct;
+  if (isCorrect) correctCount++;
+
+  // Style buttons
+  q.options.forEach((_, i) => {
+    const btn = document.getElementById(`opt-${qNum}-${i+1}`);
+    btn.classList.add('locked');
+    if (i + 1 === q.correct)      btn.classList.add('correct');
+    else if (i + 1 === chosen)    btn.classList.add('wrong');
+  });
+
+  // Style card
+  const card = document.getElementById(`card-${qNum}`);
+  card.classList.add(isCorrect ? 'answered-correct' : 'answered-wrong');
+
+  // Update header
+  document.getElementById('score-display').textContent = `${correctCount} / ${TOTAL}`;
+  document.getElementById('answered-display').textContent = `${answeredCount} besvarade`;
+  document.getElementById('progress-bar').style.width = (answeredCount / TOTAL * 100) + '%';
+
+  if (answeredCount === TOTAL) document.getElementById('finish-btn').style.display = 'block';
+}
+
+function showResults() {
+  document.getElementById('finish-btn').style.display = 'none';
+  const el = document.getElementById('results');
+  el.style.display = 'block';
+
+  const pct = Math.round(correctCount / TOTAL * 100);
+  document.getElementById('final-score').textContent = `${correctCount} / ${TOTAL}`;
+  document.getElementById('percent-text').textContent = pct + '% rätt';
+
+  let grade = '';
+  if (pct >= 90)      grade = '🏆 Utmärkt! Strålande resultat.';
+  else if (pct >= 75) grade = '✅ Bra jobbat! Godkänt med råge.';
+  else if (pct >= 60) grade = '📚 Godkänt – men det finns mer att repetera.';
+  else                grade = '💪 Håll inte modet nere – identifiera svagheterna och repetera!';
+  document.getElementById('grade-text').textContent = grade;
+
+  const wrong = questions.filter(q => userAnswers[q.num] !== q.correct);
+  if (wrong.length === 0) {
+    document.getElementById('wrong-list').innerHTML =
+      '<p style="color:#28a745;font-weight:700;font-size:1.1rem">🎉 Perfekt! Alla rätt!</p>';
+  } else {
+    document.getElementById('wrong-list').innerHTML =
+      `<h3>Fel svar – ${wrong.length} frågor att repetera:</h3>` +
+      wrong.map(q => {
+        const yourAns = q.options[userAnswers[q.num] - 1];
+        const rightAns = q.options[q.correct - 1];
+        return `<div class="wrong-item">
+          <strong>Fråga ${q.num}:</strong> Du svarade: <em>"${yourAns}"</em><br>
+          <span class="right-ans">✓ Rätt svar: "${rightAns}"</span>
+        </div>`;
+      }).join('');
+  }
+
+  el.scrollIntoView({ behavior: 'smooth' });
+}
+
+buildQuestions();
+</script>
+</body>
+</html>
